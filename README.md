@@ -1,1 +1,4 @@
-# App_Sensor
+# Sensor_App
+
+# to doリスト
+    ・nが入力されたときデータを削除し、１つ前からやり直す。
