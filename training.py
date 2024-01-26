@@ -5,6 +5,7 @@
 from __future__ import print_function
 from mbientlab.metawear import MetaWear, libmetawear, parse_value
 from mbientlab.metawear.cbindings import *
+from settings import NUM_SAMPLES,MAC_ADRESS,WAITING_TIME
 from time import sleep, time
 import csv
 from datetime import datetime, timedelta
@@ -51,14 +52,7 @@ def get_training():
         print("Usage: python script_name.py 1|2|3|4|5")
         sys.exit(1)
 
-    # MAC アドレスを選択
-    mac_options = ["EF:7D:EE:22:15:8B", # 1
-                "F9:41:F3:3B:21:24", # 2
-                "ED:60:85:42:09:A9", # 3
-                "EB:7A:92:A7:79:D0", # 4
-                "EB:0E:8D:A0:F6:8C"] # 5
-
-    mac = mac_options[int(sys.argv[1]) - 1]
+    mac = MAC_ADRESS[int(sys.argv[1]) - 1]
     print("MACアドレス : ", mac)
 
     session = 1  # 初回セッション
@@ -66,11 +60,7 @@ def get_training():
 
     try:
         # フォルダ名
-        folder_name = "Train"
-        # Train フォルダが存在しない場合は作成
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-
+        folder_name = "acc_train"
         # 接続
         d = MetaWear(mac)
         d.connect()
@@ -88,7 +78,7 @@ def get_training():
 
         # セッションごとに繰り返し
         mark_array = ["バツ","マル"]
-        while session <= 10:
+        while session <= NUM_SAMPLES:
             num = round(session/2+0.1)
             mark = mark_array[session%2]
             csv_filename = os.path.join(folder_name, f'acc_data_training_{mark}{num}.csv')
@@ -116,7 +106,7 @@ def get_training():
                     libmetawear.mbl_mw_acc_start(states[0].device.board)
 
                     # 待機
-                    sleep(2.0)  # 5秒間待機する例
+                    sleep(WAITING_TIME) 
 
                     # 加速度の停止
                     libmetawear.mbl_mw_acc_stop(states[0].device.board)
@@ -137,69 +127,21 @@ def get_training():
             libmetawear.mbl_mw_datasignal_unsubscribe(signal)
             # 切断
             libmetawear.mbl_mw_debug_disconnect(states[0].device.board)
-            
-# 加速度データをグラフで表示する関数
-def plot_acc_data(csv_file, threshold):
-    # CSVファイルからデータを読み込む
-    data = pd.read_csv(csv_file)
 
-    # タイムスタンプ列をdatetimeオブジェクトに変換
-    data['Timestamp'] = pd.to_datetime(data['Timestamp'], errors='coerce')
-
-    # タイムスタンプでエラーが発生した行を削除
-    data = data.dropna(subset=['Timestamp'])
-
-    # 最初のタイムスタンプを基準として経過時間（秒）を計算
-    start_time = data['Timestamp'].iloc[0]
-    data['Elapsed'] = (data['Timestamp'] - start_time).dt.total_seconds()
-
-    # 加速度の絶対値を計算
-    data['abs_acc'] = np.sqrt(data['X']**2 + data['Y']**2 + data['Z']**2)
-
-    # 動きがあったかどうかのフラグを設定（閾値を超える動きをしたとき）
-    data['movement'] = data['abs_acc'] > threshold
-
-    # グラフの描画
-    plt.figure(figsize=(10, 6))
-    plt.plot(data['Elapsed'], data['X'], label='X軸')
-    plt.plot(data['Elapsed'], data['Y'], label='Y軸')
-    plt.plot(data['Elapsed'], data['Z'], label='Z軸')
-
-    # 動きが検出された区間を検索
-    movements = data['movement']
-    movement_starts = data['Elapsed'][movements & ~movements.shift(1).fillna(False)]
-    movement_ends = data['Elapsed'][movements & ~movements.shift(-1).fillna(False)]
-
-    # 動きの最初と最後の位置を取得
-    if not movement_starts.empty and not movement_ends.empty:
-        first_movement_start = movement_starts.iloc[0]
-        last_movement_end = movement_ends.iloc[-1]
-
-        # 静止状態と動きがあった状態の間で背景色を変える
-        plt.axvspan(0, first_movement_start, color='blue', alpha=0.1, label='静止')
-        plt.axvspan(first_movement_start, last_movement_end, color='orange', alpha=0.3, label='運動')
-        plt.axvspan(last_movement_end, data['Elapsed'].iloc[-1], color='blue', alpha=0.1)
-    else:
-        # 動きが検出されなかった場合、全体を静止状態とする
-        plt.axvspan(0, data['Elapsed'].iloc[-1], color='blue', alpha=0.1, label='静止')
-
-    # X軸の範囲を0から2秒までに設定
-    plt.xlim(0, 2)
-
-    # ラベルとタイトルの設定
-    plt.xlabel('時間(秒)')
-    plt.ylabel('加速度(mG)')
-    plt.title('閾値:' + str(threshold) )
-    plt.legend()
-
-    # グラフの表示
-    plt.show()
+# データの確認      
+def check_data():
+    # フォルダ名
+    folder_name = "Train"
+    # フォルダ内の全てのCSVファイルのリストを取得
+    files = [file for file in os.listdir(folder_name) if file.endswith('.csv')]
+    for file in files:
+        # CSVファイルのフルパスを作成
+        file_path = os.path.join(folder_name, file)
+        # データを読み込み、リストに追加
+        df = pd.read_csv(file_path)
+        print(file,":",len(df))
 
 if __name__ == "__main__":
-    # get_training()
-    list = [0.5,1.0,1.5,2.0,2.5,3.0]
-    for i in list:
-        plot_acc_data('Train/acc_data_training_マル2.csv',threshold=i)
-    # list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
-    # for i in list:
-    #     plot_acc_data('Train/simulated_acceleration_data.csv',threshold=i)
+    get_training()
+    # print("--- 保存結果 ---")
+    # check_data()

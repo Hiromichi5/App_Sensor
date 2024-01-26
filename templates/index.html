@@ -7,61 +7,127 @@
     <style>
         #stopwatch { font-size: 20px; }
         #start, #reset { padding: 5px 15px; }
+        .selected-option {
+            background-color: yellow; /* 選択された項目の背景色 */
+            color: black; /* 選択された項目の文字色 */
+        }
     </style>
 </head>
 <body>
-    <h1>1.トレーニングデータ取得</h1>
-    <h2>・マル1回目</h2>
+    <h1>1. トレーニングデータ取得</h1>
     <div>
-        <h2>①データ取得</h2>
-        <!-- スタートとリセットボタン -->
-        <button id="start">スタート</button>
-        <button id="reset">やり直し</button>
-        <div id="stopwatch">0 秒</div>
+        <!-- トレーニングデータの選択 -->
+        <select id="round-number">
+            <option value="0">マル1回目</option>
+            <option value="1">マル2回目</option>
+            <option value="2">マル3回目</option>
+            <option value="3">マル4回目</option>
+            <option value="4">マル5回目</option>
+            <option value="5">マル6回目</option>
+            <option value="6">マル7回目</option>
+            <option value="7">マル8回目</option>
+            <option value="8">マル9回目</option>
+            <option value="9">マル10回目</option>
+            <option value="10">バツ1回目</option>
+            <option value="11">バツ2回目</option>
+            <option value="12">バツ3回目</option>
+            <option value="13">バツ4回目</option>
+            <option value="14">バツ5回目</option>
+            <option value="15">バツ6回目</option>
+            <option value="16">バツ7回目</option>
+            <option value="17">バツ8回目</option>
+            <option value="18">バツ9回目</option>
+            <option value="19">バツ10回目</option>
+            <!-- その他のオプションを追加 -->
+        </select>
     </div>
+
     <div>
-        <h2>②閾値設定</h2>
         <!-- スライダーで閾値を設定 -->
-        <input type="range" id="threshold" name="threshold" min="0" max="5" step="0.1" value="1">
+        <input type="range" id="threshold" name="threshold">
         <span id="threshold-value">閾値: 1</span>
+        <button id="decide">決定</button>
+        <button id="check">完了</button>
     </div>
     <div>
         <!-- 加速度データのグラフ -->
         <img id="graph-image" src="" alt="加速度データのグラフ">
     </div>
+    <div id="data-display"></div>
 
     <script>
+        // Flaskから渡された定数を使用
+        const SLIDER_MIN = {{ slider_min }};
+        const SLIDER_MAX = {{ slider_max }};
+        const SLIDER_STEP = {{ slider_step }};
+        const SLIDER_VALUE = {{ slider_value }};
+
+        // スライダーの初期値を表示
+        document.getElementById('threshold-value').innerText = '閾値: ' + SLIDER_VALUE;
+        // 定数をスライダーに適用
+        const slider = document.getElementById('threshold');
+        slider.min = SLIDER_MIN;
+        slider.max = SLIDER_MAX;
+        slider.step = SLIDER_STEP;
+        slider.value = SLIDER_VALUE;
+
         $(document).ready(function() {
-            var intervalId, counter = 0;
-
-            // スタートボタンをクリックした時の処理
-            $('#start').click(function() {
-                clearInterval(intervalId);
-                intervalId = setInterval(function() {
-                    counter++;
-                    if (counter > 2) { // 2秒で停止
-                        clearInterval(intervalId);
-                    }
-                    $('#stopwatch').text(counter + ' 秒');
-                }, 1000);
-            });
-
-            // リセットボタンをクリックした時の処理
-            $('#reset').click(function() {
-                clearInterval(intervalId);
-                counter = 0;
-                $('#stopwatch').text(counter + ' 秒');
-            });
-
             // スライダーの値が変わるたびにイベントをトリガーする
             $('#threshold').on('input', function() {
-                var threshold = $(this).val();
-                $('#threshold-value').text('閾値: ' + threshold);
+                var threshold = parseFloat($(this).val()).toFixed(1);
+                var roundNumber = parseInt($('#round-number').val(), 10); // 値を整数に変換
+                var Number = roundNumber % 10+1; // 10で割った余り
+                var quotient = Math.floor(roundNumber / 10); // 10で割った商
+                var mark = quotient >= 1 ? 'バツ' : 'マル'; // 商が1以上の場合は'バツ'、それ以外は'マル'
 
+                $('#threshold-value').text('閾値: ' + threshold);
                 // グラフを更新するためのPOSTリクエストを送信
-                $.post('/update_graph', {threshold: threshold}, function(data) {
+                $.post('/update_graph', {threshold: threshold, Number: Number ,mark: mark}, function(data) {
                     // グラフの画像を更新
                     $('#graph-image').attr('src', data.image_url);
+                });
+            });
+
+            // 「決定」ボタンがクリックされたときの処理
+            $('#decide').click(function() {
+                var threshold = $('#threshold').val();
+                $.post('/save_threshold', {threshold: threshold}, function(response) {
+                    alert('閾値 ' + threshold + ' が保存されました');
+
+                    // すべての選択肢のスタイルをリセット
+                    $('#round-number option').removeClass('selected-option');
+
+                    // 選択された選択肢のスタイルを変更
+                    $('#round-number option:selected').addClass('selected-option');
+                });
+            });
+
+            // トレーニングデータの選択が変更されたときの処理
+            $('#round-number').change(function() {
+                var roundNumber = parseInt($(this).val(), 10);
+                var mark = roundNumber >= 10 ? 'バツ' : 'マル'; // 商が1以上の場合は'バツ'、それ以外は'マル'
+                resetSliderAndUpdateGraph(roundNumber % 10 + 1, mark);
+            });
+
+            function resetSliderAndUpdateGraph(roundNumber, mark) {
+                // スライダーを最小値にリセット
+                $('#threshold').val(SLIDER_MIN);
+                $('#threshold-value').text('閾値: ' + SLIDER_MIN);
+
+                // グラフを更新するためのPOSTリクエストを送信
+                $.post('/update_graph', {threshold: SLIDER_MIN, Number: roundNumber, mark: mark}, function(data) {
+                    // グラフの画像を更新
+                    $('#graph-image').attr('src', data.image_url);
+                });
+            }
+            // 「完了」ボタンがクリックされたときの処理
+            $('#check').click(function() {
+                $.get('/get_thresholds', function(data) {
+                    let content = '';
+                    data.forEach(function(item) {
+                        content += `<p>${item}</p>`; // 各要素を <p> タグで囲む
+                    });
+                    $('#data-display').html(content); // HTML要素にコンテンツを挿入
                 });
             });
         });

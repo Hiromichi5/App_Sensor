@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>トレーニングデータ取得</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #stopwatch { font-size: 20px; }
+        #start, #reset { padding: 5px 15px; }
+    </style>
+</head>
+<body>
+    <h1>1.トレーニングデータ取得</h1>
+    <h2>・マル1回目</h2>
+    <div>
+        <!-- スライダーで閾値を設定 -->
+        <input type="range" id="threshold" name="threshold" min="0.5" max="3" step="0.5" value="1">
+        <span id="threshold-value">閾値: 1</span>
+        <button id="decide">決定</button>
+    </div>
+    <div>
+        <!-- 加速度データのグラフ -->
+        <img id="graph-image" src="" alt="加速度データのグラフ">
+    </div>
+
+
+    <script>
+        $(document).ready(function() {
+            // スライダーの値が変わるたびにイベントをトリガーする
+            $('#threshold').on('input', function() {
+                var threshold = parseFloat($(this).val()).toFixed(1);
+                $('#threshold-value').text('閾値: ' + threshold);
+
+                // グラフを更新するためのPOSTリクエストを送信
+                $.post('/update_graph', {threshold: threshold}, function(data) {
+                    // グラフの画像を更新
+                    $('#graph-image').attr('src', data.image_url);
+                });
+            });
+
+            // 「決定」ボタンがクリックされたときの処理
+            $('#decide').click(function() {
+                var threshold = $('#threshold').val();
+                $.post('/save_threshold', {threshold: threshold}, function(response) {
+                    alert('閾値 ' + threshold + ' が保存されました');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
