@@ -8,8 +8,8 @@ import os
 
 # 加速度データをグラフで表示する関数
 def plot_acc_data(csv_file, threshold):
-
     data = pd.read_csv(csv_file) # CSVファイルからデータを読み込む
+    data = data.iloc[5:] # 初め5データを削除
     data['Timestamp'] = pd.to_datetime(data['Timestamp'], errors='coerce') # タイムスタンプ列をdatetimeオブジェクトに変換
     data = data.dropna(subset=['Timestamp']) # タイムスタンプでエラーが発生した行を削除
     start_time = data['Timestamp'].iloc[0] # 最初のタイムスタンプを基準として経過時間（秒）を計算
@@ -61,10 +61,10 @@ def plot_acc_data(csv_file, threshold):
 def save_img(csv_file,mark,num):
     list = [round(i, 1) for i in np.arange(MIN_THRE, MAX_THRE+0.1, STEP_THRE)]
     dict = [] # 閾値に対する始終
+    data = pd.read_csv(csv_file) # CSVファイルからデータを読み込む
+    data = data.iloc[5:] # 初め5データを削除
 
     for threshold in list:
-
-        data = pd.read_csv(csv_file) # CSVファイルからデータを読み込む
         data['Timestamp'] = pd.to_datetime(data['Timestamp'], errors='coerce') # タイムスタンプ列をdatetimeオブジェクトに変換
         data = data.dropna(subset=['Timestamp']) # タイムスタンプでエラーが発生した行を削除
         start_time = data['Timestamp'].iloc[0] # 最初のタイムスタンプを基準として経過時間（秒）を計算
@@ -113,7 +113,7 @@ def save_img(csv_file,mark,num):
         # ラベルとタイトルの設定
         plt.xlabel('時間(秒)')
         plt.ylabel('加速度(mG)')
-        plt.title('閾値:' + str(threshold) )
+        plt.title(str(mark)+str(num)+'回目 閾値:' + str(threshold) )
         plt.legend()
 
         if not os.path.exists('static/img/'+str(mark)+str(num)):
@@ -139,6 +139,13 @@ if __name__ == "__main__":
         mark_array = ["バツ","マル"]
         num = round(session/2+0.1)
         mark = mark_array[session%2]
-        csv_file = 'Train/acc_data_training_'+str(mark)+str(num)+'.csv'
+        csv_file = 'acc_train/acc_data_training_'+str(mark)+str(num)+'.csv'
         print(str(mark)+str(num)+'画像生成中')
         save_img(csv_file,mark,num)
+
+    # mark  = 'バツ'
+    # num = 1
+    # csv_file = 'acc_train/acc_data_training_'+str(mark)+str(num)+'.csv'
+    # print(str(mark)+str(num)+'画像生成中')
+    # save_img(csv_file,mark,num)
+    # # plot_acc_data(csv_file,1.0)

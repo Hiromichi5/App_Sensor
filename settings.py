@@ -12,12 +12,15 @@ MAC_ADRESS = ["EF:7D:EE:22:15:8B", # 1
             "EB:0E:8D:A0:F6:8C"] # 5
 
 # 閾値
-MIN_THRE = 0.5
-MAX_THRE = 3
-STEP_THRE = 0.5
+MIN_THRE = 0.6
+MAX_THRE = 2
+STEP_THRE = 0.2
 
 # 待機時間
 WAITING_TIME = 2.0
+
+# ウィンドウサイズ
+WINDOW_SIZE = 50 # 0.5秒
 
 # ファイル構成
 

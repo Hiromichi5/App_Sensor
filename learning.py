@@ -3,56 +3,98 @@
 # 機械学習によって、分類器を作成
 
 import pandas as pd
+import numpy as np
 import glob
 import sys
 import os
+import math
+import matplotlib.pyplot as plt
+import feature
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
+import pickle  
+start = []
+end = []
 
+# 設定した閾値による抽出すべき時間をまとめたdf_threを作成
 # CSVファイルを読み込む
 df_thre = pd.read_csv('threshold.csv')
-
-# 'None'またはNaN値をデフォルト値に置き換える
-df_thre['threshold'].fillna(0, inplace=True)
-list_mark = ['マル1','マル2','マル3']
-list_thre = [0.5,1.0,1.0]
 print(df_thre)
-# for mark ,threshold in zip(df_thre['マーク'],df_thre['threshold']):
-for mark ,threshold in zip(list_mark,list_thre):
-    print(mark,",",threshold)
-    file_path = os.path.join('static','img',mark,'threshold.csv')
-    df_tmp = pd.read_csv(file_path)
-    tmp = df_tmp[df_tmp['threshold'] == threshold]
-    # df_thre[mark]['start'] == tmp['start']
-    # df_thre[mark]['end'] == tmp['end']
-    # 開始時間と終了時間の列をマージ
-    if not tmp.empty:
-        df_thre[mark + '_start'] = tmp['start'].values[0]
-        df_thre[mark + '_end'] = tmp['end'].values[0]
+for mark ,threshold in zip(df_thre['マーク'],df_thre['threshold']):
+    if math.isnan(threshold):
+        print(str(mark)+'のthresholdがNaNです。')
+        start.append(np.nan)
+        end.append(np.nan)
+        # start, endカラムにnanを追加
     else:
-        # 対応するデータがない場合はNoneまたは適切なデフォルト値を設定
-        df_thre[mark + '_start'] = None
-        df_thre[mark + '_end'] = None
-print(df_thre)
+        # start, endカラムに時間を追加
+        file = os.path.join('static','img',str(mark),'threshold.csv')
+        df_tmp = pd.read_csv(file)
+        print(mark,",",threshold)
+        s = df_tmp[df_tmp['threshold'] == threshold]['start'].values[0]
+        e = df_tmp[df_tmp['threshold'] == threshold]['end'].values[0]
+        start.append(s)
+        end.append(e)
+df_thre['start'] = start
+df_thre['end'] = end
+
+# 特徴量
+df = feature.feature_create(df_thre)
+# 特徴量とクラスラベルの分離
+X_train= df.drop(columns=["label","move"])  # 特徴量
+y_train= df["label"]  # クラスラベル
+# 標準化
+scaler = StandardScaler()
+X_train_std = scaler.fit_transform(X_train)
+X_train_std = pd.DataFrame(X_train_std, columns=X_train.columns, index=X_train.index)
+
+# マルとバツ　それぞれのクラスター中心を算出
+maru_rows = X_train_std[X_train_std.index.str.contains('マル')]
+# batu_rows = X_train_std[X_train_std.index.str.contains('バツ')]
+print(maru_rows)
+# print(batu_rows)
+
+class_center = maru_rows.mean()
+print(class_center)
+# print(class_center)
 sys.exit()
 
-# CSVファイルのパスを取得
-file_paths = glob.glob('Train/*.csv')
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
 
-# すべてのCSVファイルを1つのデータフレームにまとめる
-all_data = pd.DataFrame()
+# モデルをファイルに保存
+with open('model.pkl', 'wb') as model_file:
+    pickle.dump(model, model_file)
 
-for file_path in file_paths:
-    # CSVファイルを読み込む
-    df = pd.read_csv(file_path)
+# # モデルのロード
+# with open('model.pkl', 'rb') as model_file:
+#     loaded_model = pickle.load(model_file)
 
-    # データフレームにファイル名の情報を追加
-    filename = file_path.split('/')[-1]
-    df['File'] = filename
+# predicted = loaded_model.predict(X)
 
-    # 全体のデータフレームに追加
-    all_data = pd.concat([all_data, df], ignore_index=True)
+# X_test = 
+# X_test = scaler.transform(X_test)
 
-# データフレームを出力
-print(all_data)
+# クラスター中心との距離
 
-# CSVファイルに保存する場合は以下のようにします
-# all_data.to_csv('merged_data.csv', index=False)
+# y_pred = model.predict(X_test)
+
+# 特徴量とクラスラベルの分離
+# df.columns = df.columns.astype(str)
+# X = df.drop(columns=["label"])  # 特徴量
+# y = df["label"]  # クラスラベル
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# scaler = StandardScaler()
+# X_train = scaler.fit_transform(X_train)
+# X_test = scaler.transform(X_test)
+# model = RandomForestClassifier(n_estimators=100, random_state=42)
+# model.fit(X_train, y_train)
+# y_pred = model.predict(X_test)
+# accuracy = accuracy_score(y_test, y_pred)
+# print("Accuracy:", accuracy)
+
+
+
