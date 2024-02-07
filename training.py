@@ -2,9 +2,9 @@
 
 # 丸とバツを交互に書いてトレーニングデータを取得
 
-# from __future__ import print_function
-# from mbientlab.metawear import MetaWear, libmetawear, parse_value
-# from mbientlab.metawear.cbindings import *
+from __future__ import print_function
+from mbientlab.metawear import MetaWear, libmetawear, parse_value
+from mbientlab.metawear.cbindings import *
 from settings import NUM_SAMPLES,MAC_ADRESS,WAITING_TIME
 from time import sleep, time
 import csv
@@ -142,6 +142,6 @@ def check_data():
         print(file,":",len(df))
 
 if __name__ == "__main__":
-    # get_training()
+    get_training()
     print("--- 保存結果 ---")
-    check_data()
+    # check_data()

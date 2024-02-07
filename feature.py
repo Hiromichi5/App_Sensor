@@ -42,23 +42,18 @@ integral_energy_x, integral_energy_y, integral_energy_z, integral_energy_xyz = [
 
 label = []
 move = []
-list = ['マル1','マル2','マル3','マル4','マル5',
-            'バツ1','バツ2','バツ3','バツ4','バツ5']
+list = ['マル1','マル2','マル3','マル4','マル5','マル6','マル7','マル8','マル9','マル10',
+        'バツ1','バツ2','バツ3','バツ4','バツ5','バツ6','バツ7','バツ8','バツ9','バツ10']
+
+interval_maru, interval_batu = [], []
+
 def feature_create(df_thre):
     # 特徴量
-    global label, move
+    global label, move, interval
     for mark in list:
-        move.append(True)
-        if 'マル' in mark:
-            label.append('マル')
-        elif 'バツ' in mark:
-            label.append('バツ')
-        else:
-            label.append(np.nan)
         file = os.path.join('acc_train','acc_data_training_'+mark+'.csv')
         df_tmp = pd.read_csv(file)
         df_tmp['Timestamp'] = pd.to_datetime(df_tmp['Timestamp'])
-        print(df_tmp)
         start = df_thre[df_thre['マーク'] == mark]['start'].values[0]
         start = pd.to_datetime(start)
         end = df_thre[df_thre['マーク'] == mark]['end'].values[0]
@@ -68,6 +63,16 @@ def feature_create(df_thre):
         y = df_tmp[(df_tmp['Timestamp'] >= start) & (df_tmp['Timestamp'] <= end)]['Y']
         z = df_tmp[(df_tmp['Timestamp'] >= start) & (df_tmp['Timestamp'] <= end)]['Z']
         xyz = np.sqrt(x**2+y**2+z**2)
+        
+        move.append(True)
+        if 'マル' in mark:
+            label.append('マル')
+            interval_maru.append(len(x))
+        elif 'バツ' in mark:
+            label.append('バツ')
+            interval_batu.append(len(x))
+        else:
+            label.append(np.nan)
         # print("x = ",len(x))
         df = feature(x, y, z, xyz)
     df = pd.DataFrame()
@@ -82,11 +87,11 @@ def feature_create(df_thre):
     df['peak_frequency_x'], df['peak_frequency_y'], df['peak_frequency_z'], df['peak_frequency_xyz'] = peak_frequency_x, peak_frequency_y, peak_frequency_z, peak_frequency_xyz
     df['peak_amplitude_x'], df['peak_amplitude_y'], df['peak_amplitude_z'], df['peak_amplitude_xyz'] = peak_amplitude_x, peak_amplitude_y, peak_amplitude_z, peak_amplitude_xyz
     # df['auto_corr_x'], df['auto_corr_y'], df['auto_corr_z'], df['auto_corr_xyz'] = auto_corr_x, auto_corr_y, auto_corr_z, auto_corr_xyz
-    df['integral_energy_x'], df['integral_energy_y'], df['integral_energy_z'], df['integral_energy_xyz'] = integral_energy_x, integral_energy_y, integral_energy_z, integral_energy_xyz
+    # df['integral_energy_x'], df['integral_energy_y'], df['integral_energy_z'], df['integral_energy_xyz'] = integral_energy_x, integral_energy_y, integral_energy_z, integral_energy_xyz
     df['move'] = move
     df['label'] = label
     # df.to_csv('df.csv')
-    return df
+    return df, np.mean(interval_maru), np.mean(interval_batu) 
 
 def feature(x, y, z, xyz):
     # # 平均
@@ -166,10 +171,10 @@ def feature(x, y, z, xyz):
     # auto_corr_xyz.append(np.correlate(xyz, xyz, mode='full'))
 
     # エネルギーベースの特徴量
-    integral_energy_x.append(np.trapz(x ** 2))
-    integral_energy_y.append(np.trapz(y ** 2))
-    integral_energy_z.append(np.trapz(z ** 2))
-    integral_energy_xyz.append(np.trapz(xyz ** 2))
+    # integral_energy_x.append(np.trapz(x ** 2))
+    # integral_energy_y.append(np.trapz(y ** 2))
+    # integral_energy_z.append(np.trapz(z ** 2))
+    # integral_energy_xyz.append(np.trapz(xyz ** 2))
 
 
 

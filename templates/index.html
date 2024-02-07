@@ -74,7 +74,7 @@
         $(document).ready(function() {
             // スライダーの値が変わるたびにイベントをトリガーする
             $('#threshold').on('input', function() {
-                var threshold = parseFloat($(this).val()).toFixed(1);
+                var threshold = parseFloat($(this).val()).toFixed(2);
                 var roundNumber = parseInt($('#round-number').val(), 10); // 値を整数に変換
                 var Number = roundNumber % 10+1; // 10で割った余り
                 var quotient = Math.floor(roundNumber / 10); // 10で割った商
