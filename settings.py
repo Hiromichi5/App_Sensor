@@ -21,7 +21,9 @@ WAITING_TIME = 2.0
 TEST_TIME = 3000
 
 # ウィンドウサイズ
-WINDOW_SIZE = 50 # 0.5秒
+# WINDOW_SIZE = 50 # 0.5秒
+# スライディングウィンドウのステップ数
+STEP_SIZE = 10
 
 # ファイル構成
 
