@@ -18,6 +18,9 @@ import matplotlib.pyplot as plt
 import japanize_matplotlib
 import sys
 
+if not os.path.exists(os.path.join('acc_train')):
+    os.makedirs(os.path.join('acc_train'))
+
 class State:
     def __init__(self, device, session):
         self.device = device

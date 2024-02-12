@@ -18,12 +18,11 @@ def main():
     predictor = dlib.shape_predictor(predictor_path)  # 顔から目鼻などランドマークを出力する
 
     output_file = open("output.txt", "a")  # テキストファイルを開く
-    output_file.write("Timestamp, yaw, pitch, ro")  # テキストファイルに出力
-
+    output_file.write('Timestamp, yaw, pitch, roll\n')  # テキストファイルに出力
     while True:  # カメラから連続で画像を取得する
         ret, frame = capture.read()  # カメラからキャプチャしてframeに１コマ分の画像データを入れる
 
-        frame = imutils.resize(frame, width=250)  # frameの画像の表示サイズを整える
+        frame = imutils.resize(frame, width=300)  # frameの画像の表示サイズを整える
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # gray scaleに変換する
         rects = detector(gray, 0)  # grayから顔を検出
         image_points = None
